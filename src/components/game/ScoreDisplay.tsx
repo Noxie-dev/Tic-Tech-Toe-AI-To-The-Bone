@@ -8,7 +8,7 @@ interface ScoreDisplayProps {
     ai2: number;
     draws: number;
   };
-  gameMode: 'human-vs-ai' | 'ai-vs-ai';
+  gameMode: 'human-vs-human' | 'human-vs-ai' | 'ai-vs-ai';
 }
 
 const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ scores, gameMode }) => {
@@ -19,7 +19,22 @@ const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ scores, gameMode }) => {
       </CardHeader>
       <CardContent>
         <div className="flex justify-between items-center">
-          {gameMode === 'human-vs-ai' ? (
+          {gameMode === 'human-vs-human' ? (
+            <>
+              <div className="text-center">
+                <p className="text-sm font-medium">Player X</p>
+                <p className="text-2xl font-bold">-</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium">Draws</p>
+                <p className="text-2xl font-bold">{scores.draws}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium">Player O</p>
+                <p className="text-2xl font-bold">-</p>
+              </div>
+            </>
+          ) : gameMode === 'human-vs-ai' ? (
             <>
               <div className="text-center">
                 <p className="text-sm font-medium">You (X)</p>

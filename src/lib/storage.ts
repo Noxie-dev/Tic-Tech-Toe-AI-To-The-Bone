@@ -40,13 +40,17 @@ export const saveScores = (scores: Scores): void => {
 // Update scores based on game result
 export const updateScores = (
   winner: 'X' | 'O' | null,
-  gameMode: 'human-vs-ai' | 'ai-vs-ai'
+  gameMode: 'human-vs-human' | 'human-vs-ai' | 'ai-vs-ai'
 ): Scores => {
   const scores = loadScores();
 
   if (winner === null) {
     // It's a draw
     scores.draws += 1;
+  } else if (gameMode === 'human-vs-human') {
+    // Human vs Human mode - we don't track specific player scores
+    // Could be enhanced in the future to track Player 1 vs Player 2
+    scores.draws += 0; // No-op, just to acknowledge this case
   } else if (gameMode === 'human-vs-ai') {
     if (winner === 'X') {
       // Human wins (X)

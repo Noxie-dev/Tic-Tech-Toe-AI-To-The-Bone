@@ -1,509 +1,389 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { RefreshCw } from 'lucide-react';
 
-// Types
+// Import the components
+import GameBoard from './GameBoard';
+import GameModeSelection from './GameModeSelection';
+import StatusDisplay from './StatusDisplay';
+import GameInfo from './GameInfo';
+
 type Player = 'X' | 'O';
-type Cell = Player | null;
-type Board = Cell[];
-type GameStatus = 'playing' | 'won' | 'draw';
-type GameMode = 'human-vs-ai' | 'ai-vs-ai';
+type GameModeType = 'humanVsHuman' | 'humanVsAI' | 'aiVsAI';
+type BoardArray = Array<Player | null>;
+interface ScoresType {
+  human: number;
+  ai1: number;
+  ai2: number;
+  draw: number;
+}
 
-// Simple game board with inline styles
-const GameBoard: React.FC<{
-  board: Board;
-  onCellClick: (index: number) => void;
-  disabled?: boolean;
-}> = ({ board, onCellClick, disabled = false }) => {
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '0.5rem',
-        width: '100%',
-        maxWidth: '300px',
-        margin: '0 auto',
-      }}
-    >
-      {board.map((cell, index) => (
-        <button
-          key={index}
-          style={{
-            height: '6rem',
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '2rem',
-            fontWeight: 'bold',
-            color: cell === 'X' ? '#3b82f6' : '#ef4444',
-            backgroundColor: 'white',
-            border: '1px solid #e5e7eb',
-            borderRadius: '0.375rem',
-            cursor: disabled || cell !== null ? 'not-allowed' : 'pointer',
-          }}
-          disabled={disabled || cell !== null}
-          onClick={() => onCellClick(index)}
-        >
-          {cell}
-        </button>
-      ))}
-    </div>
-  );
-};
+export default function Game() {
+  // Game state
+  const [board, setBoard] = useState<BoardArray>(Array(9).fill(null));
+  const [currentPlayer, setCurrentPlayer] = useState<Player>('X');
+  const [gameStatus, setGameStatus] = useState<'ongoing' | 'won' | 'draw'>('ongoing');
+  const [scores, setScores] = useState<ScoresType>({ human: 0, ai1: 0, ai2: 0, draw: 0 });
+  const [gameMode, setGameMode] = useState<GameModeType>('humanVsAI');
+  const [timer, setTimer] = useState(0);
+  const [winningLine, setWinningLine] = useState<number[]>([]);
+  const [timerIntervalId, setTimerIntervalId] = useState<NodeJS.Timeout | null>(null);
+  const [gameAnimation, setGameAnimation] = useState('');
+  const [lastMove, setLastMove] = useState<number | null>(null);
 
-// Mode selection component
-const ModeSelection: React.FC<{
-  gameMode: GameMode;
-  onModeChange: (mode: GameMode) => void;
-  disabled?: boolean;
-}> = ({ gameMode, onModeChange, disabled = false }) => {
-  return (
-    <div
-      style={{
-        backgroundColor: 'white',
-        borderRadius: '0.5rem',
-        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-        padding: '1.5rem',
-        marginBottom: '1.5rem',
-      }}
-    >
-      <h3
-        style={{
-          fontSize: '1.25rem',
-          fontWeight: 'bold',
-          textAlign: 'center',
-          marginBottom: '1rem',
-        }}
-      >
-        Game Mode
-      </h3>
-
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '1rem',
-        }}
-      >
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            cursor: disabled ? 'not-allowed' : 'pointer',
-          }}
-        >
-          <input
-            type="radio"
-            value="human-vs-ai"
-            checked={gameMode === 'human-vs-ai'}
-            onChange={() => onModeChange('human-vs-ai')}
-            disabled={disabled}
-            style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
-          />
-          <span>Human vs AI</span>
-        </label>
-
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            cursor: disabled ? 'not-allowed' : 'pointer',
-          }}
-        >
-          <input
-            type="radio"
-            value="ai-vs-ai"
-            checked={gameMode === 'ai-vs-ai'}
-            onChange={() => onModeChange('ai-vs-ai')}
-            disabled={disabled}
-            style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
-          />
-          <span>AI vs AI</span>
-        </label>
-      </div>
-    </div>
-  );
-};
-
-// AI functions
-const findWinningMove = (board: Board, player: Player): number => {
-  const winPatterns = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8], // rows
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8], // columns
-    [0, 4, 8],
-    [2, 4, 6], // diagonals
+  const WINNING_PATTERNS = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+    [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+    [0, 4, 8], [2, 4, 6],             // Diagonals
   ];
 
-  for (const pattern of winPatterns) {
-    const [a, b, c] = pattern;
-    // Check if two cells have the player's mark and the third is empty
-    if (
-      (board[a] === player && board[b] === player && board[c] === null) ||
-      (board[a] === player && board[c] === player && board[b] === null) ||
-      (board[b] === player && board[c] === player && board[a] === null)
-    ) {
-      // Return the empty cell index
-      if (board[a] === null) return a;
-      if (board[b] === null) return b;
-      if (board[c] === null) return c;
+  // Start timer function
+  const startTimer = useCallback(() => {
+    if (timerIntervalId) {
+      clearInterval(timerIntervalId);
     }
-  }
+    setTimer(0);
+    const id = setInterval(() => {
+      setTimer(prev => prev + 1);
+    }, 1000);
+    setTimerIntervalId(id);
+  }, [timerIntervalId]);
 
-  return -1; // No winning move found
-};
+  // Stop timer function
+  const stopTimer = useCallback(() => {
+    if (timerIntervalId) {
+      clearInterval(timerIntervalId);
+      setTimerIntervalId(null);
+    }
+  }, [timerIntervalId]);
 
-const getAIMove = (board: Board, player: Player): number => {
-  // Check if AI can win in the next move
-  const winningMove = findWinningMove(board, player);
-  if (winningMove !== -1) {
-    return winningMove;
-  }
-
-  // Check if opponent can win in the next move and block
-  const opponentPlayer = player === 'X' ? 'O' : 'X';
-  const blockingMove = findWinningMove(board, opponentPlayer);
-  if (blockingMove !== -1) {
-    return blockingMove;
-  }
-
-  // Try to take the center
-  if (board[4] === null) {
-    return 4;
-  }
-
-  // Try to take the corners
-  const corners = [0, 2, 6, 8];
-  const availableCorners = corners.filter(corner => board[corner] === null);
-  if (availableCorners.length > 0) {
-    return availableCorners[Math.floor(Math.random() * availableCorners.length)];
-  }
-
-  // Take any available edge
-  const edges = [1, 3, 5, 7];
-  const availableEdges = edges.filter(edge => board[edge] === null);
-  if (availableEdges.length > 0) {
-    return availableEdges[Math.floor(Math.random() * availableEdges.length)];
-  }
-
-  // If all else fails, choose a random empty cell
-  const emptyCells = board
-    .map((cell, index) => (cell === null ? index : -1))
-    .filter(index => index !== -1);
-
-  if (emptyCells.length === 0) {
-    return -1; // No valid moves
-  }
-
-  return emptyCells[Math.floor(Math.random() * emptyCells.length)];
-};
-
-// Main Game component
-const Game: React.FC = () => {
-  // Game state
-  const [board, setBoard] = useState<Board>(Array(9).fill(null));
-  const [currentPlayer, setCurrentPlayer] = useState<Player>('X');
-  const [gameStatus, setGameStatus] = useState<GameStatus>('playing');
-  const [winner, setWinner] = useState<Player | null>(null);
-  const [gameMode, setGameMode] = useState<GameMode>('human-vs-ai');
-  const [seconds, setSeconds] = useState<number>(0);
-  const [timerActive, setTimerActive] = useState<boolean>(false);
-
-  // Check if a player has won
-  const checkWinner = (board: Board): Player | null => {
-    const winPatterns = [
-      [0, 1, 2],
-      [3, 4, 5],
-      [6, 7, 8], // rows
-      [0, 3, 6],
-      [1, 4, 7],
-      [2, 5, 8], // columns
-      [0, 4, 8],
-      [2, 4, 6], // diagonals
-    ];
-
-    for (const pattern of winPatterns) {
-      const [a, b, c] = pattern;
+  // Check for winner
+  const checkWinner = useCallback(() => {
+    for (let i = 0; i < WINNING_PATTERNS.length; i++) {
+      const [a, b, c] = WINNING_PATTERNS[i];
       if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+        setWinningLine(WINNING_PATTERNS[i]);
         return board[a] as Player;
       }
     }
-
     return null;
-  };
+  }, [board, WINNING_PATTERNS]);
 
-  // Check if the game is a draw
-  const checkDraw = (board: Board): boolean => {
+  // Initialize game on mount
+  useEffect(() => {
+    const storedScores = localStorage.getItem('ticTacToeScores');
+    if (storedScores) {
+      try {
+        setScores(JSON.parse(storedScores));
+      } catch (e) {
+        console.error("Failed to parse stored scores", e);
+      }
+    }
+    startTimer();
+    setGameAnimation('animate-fade-in');
+
+    return () => {
+      if (timerIntervalId) clearInterval(timerIntervalId);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // startTimer and timerIntervalId are managed carefully
+
+  // Save scores to localStorage
+  useEffect(() => {
+    localStorage.setItem('ticTacToeScores', JSON.stringify(scores));
+  }, [scores]);
+
+  // Check for draw
+  const checkDraw = useCallback(() => {
     return board.every(cell => cell !== null);
-  };
+  }, [board]);
 
-  // Get game status
-  const getGameStatus = (board: Board): { status: GameStatus; winner: Player | null } => {
-    const winner = checkWinner(board);
-    if (winner) {
-      return { status: 'won', winner };
-    }
-    if (checkDraw(board)) {
-      return { status: 'draw', winner: null };
-    }
-    return { status: 'playing', winner: null };
-  };
-
-  // Make a move
-  const makeMove = (board: Board, index: number, player: Player): Board => {
-    if (board[index] !== null) {
-      return board; // Cell already occupied
-    }
-
-    const newBoard = [...board];
-    newBoard[index] = player;
-    return newBoard;
-  };
-
-  // Switch player
-  const switchPlayer = (currentPlayer: Player): Player => {
-    return currentPlayer === 'X' ? 'O' : 'X';
-  };
-
-  // Initialize the game
-  const initGame = useCallback(() => {
-    setBoard(Array(9).fill(null));
-    setCurrentPlayer('X');
-    setGameStatus('playing');
-    setWinner(null);
-    setSeconds(0);
-    setTimerActive(true);
-  }, []);
-
-  // Handle cell click
-  const handleCellClick = useCallback(
-    (index: number) => {
-      if (gameStatus !== 'playing' || board[index] !== null) {
-        return;
+  // Handle win
+  const handleWin = useCallback((winner: Player) => {
+    setGameStatus('won');
+    stopTimer();
+    setGameAnimation('animate-win');
+    setScores(prev => {
+      const newScores = { ...prev };
+      if (gameMode === 'humanVsAI') {
+        if (winner === 'X') newScores.human++;
+        else newScores.ai1++;
+      } else if (gameMode === 'aiVsAI') {
+        if (winner === 'X') newScores.ai1++;
+        else newScores.ai2++;
+      } else { // humanVsHuman
+        if (winner === 'X') newScores.human++;
+        else newScores.ai1++; // Using ai1 for Player O in human vs human
       }
+      return newScores;
+    });
+  }, [gameMode, stopTimer]);
 
-      // Make the move
-      const newBoard = makeMove([...board], index, currentPlayer);
+  // Handle draw
+  const handleDraw = useCallback(() => {
+    setGameStatus('draw');
+    stopTimer();
+    setGameAnimation('animate-draw');
+    setScores(prev => ({ ...prev, draw: (prev.draw || 0) + 1 }));
+  }, [stopTimer]);
+
+  // Find a winning move for the given player
+  const findWinningMove = useCallback((player: Player, currentBoard: BoardArray) => {
+    for (const line of WINNING_PATTERNS) {
+      const [a, b, c] = line;
+      const cells = [currentBoard[a], currentBoard[b], currentBoard[c]];
+      const playerCells = cells.filter(cell => cell === player).length;
+      const emptyCells = cells.filter(cell => cell === null).length;
+
+      if (playerCells === 2 && emptyCells === 1) {
+        const emptyIndex = line[cells.findIndex(cell => cell === null)];
+        return emptyIndex;
+      }
+    }
+    return -1;
+  }, [WINNING_PATTERNS]);
+
+  // AI move logic
+  const makeAIMove = useCallback(() => {
+    if (gameStatus !== 'ongoing') return;
+
+    let newBoard = [...board];
+    const aiPlayer = currentPlayer;
+    const opponentPlayer = aiPlayer === 'X' ? 'O' : 'X';
+
+    // 1. Try to win
+    let move = findWinningMove(aiPlayer, newBoard);
+    if (move !== -1) {
+      newBoard[move] = aiPlayer;
       setBoard(newBoard);
-
-      // Check game status
-      const { status, winner } = getGameStatus(newBoard);
-      setGameStatus(status);
-      setWinner(winner);
-
-      if (status !== 'playing') {
-        // Game ended
-        setTimerActive(false);
-      } else {
-        // Switch player
-        setCurrentPlayer(switchPlayer(currentPlayer));
-      }
-    },
-    [board, currentPlayer, gameStatus]
-  );
-
-  // Handle AI move
-  const handleAIMove = useCallback(() => {
-    if (gameStatus !== 'playing') {
+      setLastMove(move);
+      setCurrentPlayer(opponentPlayer);
       return;
     }
 
-    const aiMoveIndex = getAIMove([...board], currentPlayer);
-
-    if (aiMoveIndex !== -1) {
-      setTimeout(() => {
-        handleCellClick(aiMoveIndex);
-      }, 500); // Add a small delay to make AI moves visible
+    // 2. Block opponent's winning move
+    move = findWinningMove(opponentPlayer, newBoard);
+    if (move !== -1) {
+      newBoard[move] = aiPlayer;
+      setBoard(newBoard);
+      setLastMove(move);
+      setCurrentPlayer(opponentPlayer);
+      return;
     }
-  }, [board, currentPlayer, gameStatus, handleCellClick]);
+
+    // 3. Make first move if AI is 'X' and board is empty (for aiVsAI or if X is AI)
+    if (board.every(cell => cell === null)) {
+        const corners = [0, 2, 6, 8];
+        const randomCorner = corners[Math.floor(Math.random() * corners.length)];
+        newBoard[randomCorner] = aiPlayer;
+        setBoard(newBoard);
+        setLastMove(randomCorner);
+        setCurrentPlayer(opponentPlayer);
+        return;
+    }
+
+    // 4. Try to take center
+    if (newBoard[4] === null) {
+      newBoard[4] = aiPlayer;
+      setBoard(newBoard);
+      setLastMove(4);
+      setCurrentPlayer(opponentPlayer);
+      return;
+    }
+
+    // 5. Try to take an empty corner
+    const corners = [0, 2, 6, 8].filter(i => newBoard[i] === null);
+    if (corners.length > 0) {
+      const randomCorner = corners[Math.floor(Math.random() * corners.length)];
+      newBoard[randomCorner] = aiPlayer;
+      setBoard(newBoard);
+      setLastMove(randomCorner);
+      setCurrentPlayer(opponentPlayer);
+      return;
+    }
+
+    // 6. Take any available side
+    const sides = [1, 3, 5, 7].filter(i => newBoard[i] === null);
+    if (sides.length > 0) {
+        const randomSide = sides[Math.floor(Math.random() * sides.length)];
+        newBoard[randomSide] = aiPlayer;
+        setBoard(newBoard);
+        setLastMove(randomSide);
+        setCurrentPlayer(opponentPlayer);
+        return;
+    }
+
+    // 7. Fallback: Take any available space
+    const emptyCells = newBoard.map((cell, index) => cell === null ? index : -1).filter(index => index !== -1);
+    if (emptyCells.length > 0) {
+      const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      newBoard[randomCell] = aiPlayer;
+      setBoard(newBoard);
+      setLastMove(randomCell);
+      setCurrentPlayer(opponentPlayer);
+    }
+  }, [board, currentPlayer, findWinningMove, gameStatus]);
+
+  // Game logic for win detection and AI moves
+  useEffect(() => {
+    const winner = checkWinner();
+    if (winner) {
+      handleWin(winner);
+    } else if (checkDraw()) {
+      handleDraw();
+    } else if (gameStatus === 'ongoing') {
+      if ((gameMode === 'humanVsAI' && currentPlayer === 'O') ||
+          (gameMode === 'aiVsAI')) { // AI's turn in either mode
+        const aiMoveTimeout = setTimeout(() => {
+          makeAIMove();
+        }, 700);
+        return () => clearTimeout(aiMoveTimeout);
+      }
+    }
+  }, [board, currentPlayer, gameMode, gameStatus, checkWinner, handleWin, checkDraw, handleDraw, makeAIMove]);
+
+  // Reset game function
+  const resetGame = useCallback(() => {
+    setGameAnimation('animate-pulse');
+    setTimeout(() => {
+      setBoard(Array(9).fill(null));
+      setCurrentPlayer('X');
+      setGameStatus('ongoing');
+      setWinningLine([]);
+      setLastMove(null);
+      stopTimer();
+      startTimer();
+      setGameAnimation('animate-fade-in');
+    }, 300);
+  }, [startTimer, stopTimer]);
+
+  // Handle cell click
+  const handleCellClick = useCallback((index: number) => {
+    if (gameStatus !== 'ongoing' || board[index] ||
+        (gameMode === 'humanVsAI' && currentPlayer === 'O') ||
+        gameMode === 'aiVsAI') {
+      return;
+    }
+    const newBoard = [...board];
+    newBoard[index] = currentPlayer;
+    setBoard(newBoard);
+    setLastMove(index);
+    setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
+  }, [board, currentPlayer, gameMode, gameStatus]);
+
+  // Format time helper
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+  };
+
+  // Check if a cell is part of the winning line
+  const isWinningCell = useCallback((index: number) => {
+    return winningLine.includes(index);
+  }, [winningLine]);
 
   // Handle game mode change
-  const handleModeChange = (mode: GameMode) => {
+  const handleModeChange = (mode: GameModeType) => {
     setGameMode(mode);
-    initGame();
+    resetGame(); // Reset game when mode changes
   };
 
-  // Timer effect
-  useEffect(() => {
-    let interval: number | undefined;
+  // Get status message
+  const getStatusMessage = useCallback(() => {
+    if (gameStatus === 'won') {
+      const winner = winningLine.length > 0 ? board[winningLine[0]] : null;
+      if (!winner) return "Game Over!";
 
-    if (timerActive) {
-      interval = window.setInterval(() => {
-        setSeconds(prevSeconds => prevSeconds + 1);
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
+      if (gameMode === 'humanVsAI') {
+        return winner === 'X' ? 'You win!' : 'AI wins!';
+      } else if (gameMode === 'humanVsHuman') {
+        return `Player ${winner} wins!`;
+      } else {
+        return `${winner === 'X' ? 'AI 1 (X)' : 'AI 2 (O)'} wins!`;
       }
+    } else if (gameStatus === 'draw') {
+      return "It's a draw!";
+    } else {
+      let playerDisplay = "";
+      if (gameMode === 'humanVsAI') {
+        playerDisplay = currentPlayer === 'X' ? 'You (X)' : 'AI (O)';
+      } else if (gameMode === 'humanVsHuman') {
+        playerDisplay = `Player ${currentPlayer}`;
+      } else { // aiVsAI
+        playerDisplay = currentPlayer === 'X' ? 'AI 1 (X)' : 'AI 2 (O)';
+      }
+      return `Current Player: ${playerDisplay}`;
+    }
+  }, [gameStatus, currentPlayer, gameMode, board, winningLine]);
+
+  // Enhanced keyboard navigation
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+        if (event.key.toLowerCase() === 'r') {
+            resetGame();
+        }
     };
-  }, [timerActive]);
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+        window.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [resetGame]);
 
-  // AI move effect
-  useEffect(() => {
-    if (gameStatus === 'playing') {
-      if ((gameMode === 'human-vs-ai' && currentPlayer === 'O') || gameMode === 'ai-vs-ai') {
-        handleAIMove();
-      }
-    }
-  }, [gameStatus, currentPlayer, gameMode, handleAIMove]);
-
-  // Initialize game on first render
-  useEffect(() => {
-    initGame();
-  }, [initGame]);
-
-  // Format time
-  const formatTime = (totalSeconds: number): string => {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
 
   return (
-    <div
-      style={{
-        maxWidth: '500px',
-        width: '100%',
-        padding: '1rem',
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '0.5rem',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-          marginBottom: '1.5rem',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            padding: '1.5rem',
-            borderBottom: gameStatus !== 'playing' ? '1px solid #e5e7eb' : 'none',
-          }}
-        >
-          <h2
-            style={{
-              fontSize: '1.5rem',
-              fontWeight: 'bold',
-              textAlign: 'center',
-              marginBottom: '1rem',
-            }}
-          >
-            Tic-Tac-Toe AI
-          </h2>
-
-          <GameBoard
-            board={board}
-            onCellClick={handleCellClick}
-            disabled={
-              gameStatus !== 'playing' ||
-              (gameMode === 'human-vs-ai' && currentPlayer === 'O') ||
-              gameMode === 'ai-vs-ai'
-            }
-          />
-        </div>
-
-        <div
-          style={{
-            padding: '1.5rem',
-            display: 'flex',
-            justifyContent: 'center',
-          }}
-        >
-          {gameStatus !== 'playing' ? (
-            <div style={{ textAlign: 'center' }}>
-              <h3
-                style={{
-                  fontSize: '1.25rem',
-                  fontWeight: 'bold',
-                  marginBottom: '0.5rem',
-                }}
-              >
-                {gameStatus === 'won'
-                  ? `${
-                      winner === 'X'
-                        ? gameMode === 'human-vs-ai'
-                          ? 'You'
-                          : 'AI 1'
-                        : gameMode === 'human-vs-ai'
-                          ? 'AI'
-                          : 'AI 2'
-                    } won!`
-                  : "It's a draw!"}
-              </h3>
-              <button
-                style={{
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.25rem',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontWeight: '500',
-                }}
-                onClick={initGame}
-              >
-                New Game
-              </button>
-            </div>
-          ) : (
-            <p style={{ textAlign: 'center' }}>
-              {gameMode === 'human-vs-ai'
-                ? currentPlayer === 'X'
-                  ? 'Your turn (X)'
-                  : 'AI is thinking... (O)'
-                : currentPlayer === 'X'
-                  ? 'AI 1 is thinking... (X)'
-                  : 'AI 2 is thinking... (O)'}
-            </p>
-          )}
-        </div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 p-6"
+         role="main"
+         aria-label="Tic Tac Toe Game">
+      {/* Animated metallic particles (background effect) */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-900 via-gray-950 to-black"></div>
+        <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z\' fill=\'%23818cf8\' fill-opacity=\'0.1\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")', backgroundSize: '150px 150px' }}></div>
       </div>
 
-      <div
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '0.5rem',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-          padding: '1.5rem',
-          marginBottom: '1.5rem',
-          textAlign: 'center',
-        }}
-      >
-        <h3
-          style={{
-            fontSize: '1.25rem',
-            fontWeight: 'bold',
-            marginBottom: '0.5rem',
-          }}
-        >
-          Game Time
-        </h3>
-        <p
-          style={{
-            fontFamily: 'monospace',
-            fontSize: '1.5rem',
-          }}
-        >
-          {formatTime(seconds)}
-        </p>
-      </div>
+      <div className={`relative z-10 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-6 w-full max-w-md
+        backdrop-blur-sm backdrop-filter border border-gray-700 transform transition-all duration-500 ${gameAnimation}`}
+        aria-live="polite">
 
-      <ModeSelection
-        gameMode={gameMode}
-        onModeChange={handleModeChange}
-        disabled={gameStatus === 'playing'}
-      />
+        <h1 className="text-3xl font-bold text-center mb-6 relative">
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-blue-500 animate-text-shimmer">
+            Tic Tac Toe
+          </span>
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg opacity-20 blur-lg -z-10"></div>
+        </h1>
+
+        <GameModeSelection gameMode={gameMode} onModeChange={handleModeChange} />
+
+        <StatusDisplay gameStatus={gameStatus} message={getStatusMessage()} />
+
+        <GameBoard
+          board={board}
+          handleCellClick={handleCellClick}
+          isWinningCell={isWinningCell}
+          gameStatus={gameStatus}
+          gameMode={gameMode}
+          currentPlayer={currentPlayer}
+        />
+
+        <GameInfo
+          timer={timer}
+          formatTime={formatTime}
+          scores={scores}
+          gameMode={gameMode}
+        />
+
+        {/* Reset Button */}
+        <button
+          onClick={resetGame}
+          className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold rounded-lg
+                     shadow-lg hover:from-red-700 hover:to-red-800 transition-all duration-300 transform hover:scale-105
+                     focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50
+                     flex items-center justify-center space-x-2"
+          aria-label="Reset game"
+        >
+          <RefreshCw className="w-5 h-5" />
+          <span>Reset Game (R)</span>
+        </button>
+      </div>
     </div>
   );
-};
-
-export default Game;
+}
