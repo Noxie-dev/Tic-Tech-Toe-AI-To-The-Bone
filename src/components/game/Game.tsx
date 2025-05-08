@@ -3,9 +3,15 @@ import { RefreshCw } from 'lucide-react';
 
 // Import the components
 import GameBoard from './GameBoard';
-import GameModeSelection from './GameModeSelection';
 import StatusDisplay from './StatusDisplay';
 import GameInfo from './GameInfo';
+import HelpModal from './HelpModal';
+import TabContainer from './TabContainer';
+import GameSettingsModal from './GameSettingsModal';
+import { makeAIMove as makeAILogicMove } from '../../lib/gameLogic';
+
+// Define difficulty type
+type Difficulty = 'easy' | 'medium' | 'hard';
 
 type Player = 'X' | 'O';
 type GameModeType = 'humanVsHuman' | 'humanVsAI' | 'aiVsAI';
@@ -24,11 +30,17 @@ export default function Game() {
   const [gameStatus, setGameStatus] = useState<'ongoing' | 'won' | 'draw'>('ongoing');
   const [scores, setScores] = useState<ScoresType>({ human: 0, ai1: 0, ai2: 0, draw: 0 });
   const [gameMode, setGameMode] = useState<GameModeType>('humanVsAI');
+  const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [timer, setTimer] = useState(0);
   const [winningLine, setWinningLine] = useState<number[]>([]);
   const [timerIntervalId, setTimerIntervalId] = useState<NodeJS.Timeout | null>(null);
   const [gameAnimation, setGameAnimation] = useState('');
   const [lastMove, setLastMove] = useState<number | null>(null);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [isFirstAIMove, setIsFirstAIMove] = useState(true);
+
+  // Settings modal state
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(true); // Open by default on first load
 
   const WINNING_PATTERNS = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
@@ -46,6 +58,7 @@ export default function Game() {
       setTimer(prev => prev + 1);
     }, 1000);
     setTimerIntervalId(id);
+    setGameStarted(true);
   }, [timerIntervalId]);
 
   // Stop timer function
@@ -78,19 +91,16 @@ export default function Game() {
         console.error("Failed to parse stored scores", e);
       }
     }
-    startTimer();
+    // Don't start timer until first move
     setGameAnimation('animate-fade-in');
 
     return () => {
       if (timerIntervalId) clearInterval(timerIntervalId);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // startTimer and timerIntervalId are managed carefully
+  }, []); // timerIntervalId is managed carefully
 
-  // Save scores to localStorage
-  useEffect(() => {
-    localStorage.setItem('ticTacToeScores', JSON.stringify(scores));
-  }, [scores]);
+  // We now save scores directly in handleWin and handleDraw functions
 
   // Check for draw
   const checkDraw = useCallback(() => {
@@ -102,18 +112,32 @@ export default function Game() {
     setGameStatus('won');
     stopTimer();
     setGameAnimation('animate-win');
+
+    // Update scores with proper increments
     setScores(prev => {
       const newScores = { ...prev };
       if (gameMode === 'humanVsAI') {
-        if (winner === 'X') newScores.human++;
-        else newScores.ai1++;
+        if (winner === 'X') {
+          newScores.human = prev.human + 1;
+        } else {
+          newScores.ai1 = prev.ai1 + 1;
+        }
       } else if (gameMode === 'aiVsAI') {
-        if (winner === 'X') newScores.ai1++;
-        else newScores.ai2++;
+        if (winner === 'X') {
+          newScores.ai1 = prev.ai1 + 1;
+        } else {
+          newScores.ai2 = prev.ai2 + 1;
+        }
       } else { // humanVsHuman
-        if (winner === 'X') newScores.human++;
-        else newScores.ai1++; // Using ai1 for Player O in human vs human
+        if (winner === 'X') {
+          newScores.human = prev.human + 1;
+        } else {
+          newScores.ai1 = prev.ai1 + 1; // Using ai1 for Player O in human vs human
+        }
       }
+
+      // Save to localStorage immediately
+      localStorage.setItem('ticTacToeScores', JSON.stringify(newScores));
       return newScores;
     });
   }, [gameMode, stopTimer]);
@@ -123,7 +147,12 @@ export default function Game() {
     setGameStatus('draw');
     stopTimer();
     setGameAnimation('animate-draw');
-    setScores(prev => ({ ...prev, draw: (prev.draw || 0) + 1 }));
+    setScores(prev => {
+      const newScores = { ...prev, draw: prev.draw + 1 };
+      // Save to localStorage immediately
+      localStorage.setItem('ticTacToeScores', JSON.stringify(newScores));
+      return newScores;
+    });
   }, [stopTimer]);
 
   // Find a winning move for the given player
@@ -150,78 +179,16 @@ export default function Game() {
     const aiPlayer = currentPlayer;
     const opponentPlayer = aiPlayer === 'X' ? 'O' : 'X';
 
-    // 1. Try to win
-    let move = findWinningMove(aiPlayer, newBoard);
-    if (move !== -1) {
+    // Use the imported AI logic based on difficulty
+    const move = makeAILogicMove(newBoard, aiPlayer, difficulty);
+
+    if (move !== null) {
       newBoard[move] = aiPlayer;
       setBoard(newBoard);
       setLastMove(move);
       setCurrentPlayer(opponentPlayer);
-      return;
     }
-
-    // 2. Block opponent's winning move
-    move = findWinningMove(opponentPlayer, newBoard);
-    if (move !== -1) {
-      newBoard[move] = aiPlayer;
-      setBoard(newBoard);
-      setLastMove(move);
-      setCurrentPlayer(opponentPlayer);
-      return;
-    }
-
-    // 3. Make first move if AI is 'X' and board is empty (for aiVsAI or if X is AI)
-    if (board.every(cell => cell === null)) {
-        const corners = [0, 2, 6, 8];
-        const randomCorner = corners[Math.floor(Math.random() * corners.length)];
-        newBoard[randomCorner] = aiPlayer;
-        setBoard(newBoard);
-        setLastMove(randomCorner);
-        setCurrentPlayer(opponentPlayer);
-        return;
-    }
-
-    // 4. Try to take center
-    if (newBoard[4] === null) {
-      newBoard[4] = aiPlayer;
-      setBoard(newBoard);
-      setLastMove(4);
-      setCurrentPlayer(opponentPlayer);
-      return;
-    }
-
-    // 5. Try to take an empty corner
-    const corners = [0, 2, 6, 8].filter(i => newBoard[i] === null);
-    if (corners.length > 0) {
-      const randomCorner = corners[Math.floor(Math.random() * corners.length)];
-      newBoard[randomCorner] = aiPlayer;
-      setBoard(newBoard);
-      setLastMove(randomCorner);
-      setCurrentPlayer(opponentPlayer);
-      return;
-    }
-
-    // 6. Take any available side
-    const sides = [1, 3, 5, 7].filter(i => newBoard[i] === null);
-    if (sides.length > 0) {
-        const randomSide = sides[Math.floor(Math.random() * sides.length)];
-        newBoard[randomSide] = aiPlayer;
-        setBoard(newBoard);
-        setLastMove(randomSide);
-        setCurrentPlayer(opponentPlayer);
-        return;
-    }
-
-    // 7. Fallback: Take any available space
-    const emptyCells = newBoard.map((cell, index) => cell === null ? index : -1).filter(index => index !== -1);
-    if (emptyCells.length > 0) {
-      const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-      newBoard[randomCell] = aiPlayer;
-      setBoard(newBoard);
-      setLastMove(randomCell);
-      setCurrentPlayer(opponentPlayer);
-    }
-  }, [board, currentPlayer, findWinningMove, gameStatus]);
+  }, [board, currentPlayer, difficulty, gameStatus]);
 
   // Game logic for win detection and AI moves
   useEffect(() => {
@@ -233,13 +200,30 @@ export default function Game() {
     } else if (gameStatus === 'ongoing') {
       if ((gameMode === 'humanVsAI' && currentPlayer === 'O') ||
           (gameMode === 'aiVsAI')) { // AI's turn in either mode
+
+        // Start timer on first AI move if not already started
+        if (!gameStarted) {
+          startTimer();
+        }
+
+        // Determine delay based on game mode and if it's the first move
+        let delay = 700; // Default delay for human vs AI
+
+        if (gameMode === 'aiVsAI') {
+          delay = isFirstAIMove ? 3500 : 3500; // 3.5 seconds for AI vs AI
+        }
+
         const aiMoveTimeout = setTimeout(() => {
           makeAIMove();
-        }, 700);
+          if (isFirstAIMove) {
+            setIsFirstAIMove(false);
+          }
+        }, delay);
+
         return () => clearTimeout(aiMoveTimeout);
       }
     }
-  }, [board, currentPlayer, gameMode, gameStatus, checkWinner, handleWin, checkDraw, handleDraw, makeAIMove]);
+  }, [board, currentPlayer, gameMode, gameStatus, checkWinner, handleWin, checkDraw, handleDraw, makeAIMove, gameStarted, startTimer, isFirstAIMove]);
 
   // Reset game function
   const resetGame = useCallback(() => {
@@ -251,10 +235,14 @@ export default function Game() {
       setWinningLine([]);
       setLastMove(null);
       stopTimer();
-      startTimer();
+      // Don't start timer until first move
+      setTimer(0);
+      setGameStarted(false);
+      setIsFirstAIMove(true);
       setGameAnimation('animate-fade-in');
+      setIsSettingsModalOpen(true); // Show settings modal when game is reset
     }, 300);
-  }, [startTimer, stopTimer]);
+  }, [stopTimer]);
 
   // Handle cell click
   const handleCellClick = useCallback((index: number) => {
@@ -263,12 +251,18 @@ export default function Game() {
         gameMode === 'aiVsAI') {
       return;
     }
+
+    // Start timer on first move if not already started
+    if (!gameStarted) {
+      startTimer();
+    }
+
     const newBoard = [...board];
     newBoard[index] = currentPlayer;
     setBoard(newBoard);
     setLastMove(index);
     setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
-  }, [board, currentPlayer, gameMode, gameStatus]);
+  }, [board, currentPlayer, gameMode, gameStatus, gameStarted, startTimer]);
 
   // Format time helper
   const formatTime = (seconds: number) => {
@@ -285,7 +279,18 @@ export default function Game() {
   // Handle game mode change
   const handleModeChange = (mode: GameModeType) => {
     setGameMode(mode);
-    resetGame(); // Reset game when mode changes
+    // Don't reset game here since we're using the modal now
+  };
+
+  // Handle difficulty change
+  const handleDifficultyChange = (newDifficulty: Difficulty) => {
+    setDifficulty(newDifficulty);
+    // Don't reset game here since we're using the modal now
+  };
+
+  // Close settings modal
+  const closeSettingsModal = () => {
+    setIsSettingsModalOpen(false);
   };
 
   // Get status message
@@ -295,26 +300,26 @@ export default function Game() {
       if (!winner) return "Game Over!";
 
       if (gameMode === 'humanVsAI') {
-        return winner === 'X' ? 'You win!' : 'AI wins!';
+        return winner === 'X' ? 'You win!' : `AI (${difficulty}) wins!`;
       } else if (gameMode === 'humanVsHuman') {
         return `Player ${winner} wins!`;
       } else {
-        return `${winner === 'X' ? 'AI 1 (X)' : 'AI 2 (O)'} wins!`;
+        return `${winner === 'X' ? `AI 1 (${difficulty}) (X)` : `AI 2 (${difficulty}) (O)`} wins!`;
       }
     } else if (gameStatus === 'draw') {
       return "It's a draw!";
     } else {
       let playerDisplay = "";
       if (gameMode === 'humanVsAI') {
-        playerDisplay = currentPlayer === 'X' ? 'You (X)' : 'AI (O)';
+        playerDisplay = currentPlayer === 'X' ? 'You (X)' : `AI (${difficulty}) (O)`;
       } else if (gameMode === 'humanVsHuman') {
         playerDisplay = `Player ${currentPlayer}`;
       } else { // aiVsAI
-        playerDisplay = currentPlayer === 'X' ? 'AI 1 (X)' : 'AI 2 (O)';
+        playerDisplay = currentPlayer === 'X' ? `AI 1 (${difficulty}) (X)` : `AI 2 (${difficulty}) (O)`;
       }
       return `Current Player: ${playerDisplay}`;
     }
-  }, [gameStatus, currentPlayer, gameMode, board, winningLine]);
+  }, [gameStatus, currentPlayer, gameMode, board, winningLine, difficulty]);
 
   // Enhanced keyboard navigation
   useEffect(() => {
@@ -333,25 +338,38 @@ export default function Game() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 p-6"
          role="main"
-         aria-label="Tic Tac Toe Game">
+         aria-label="Tic TECH Toe Game">
       {/* Animated metallic particles (background effect) */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-900 via-gray-950 to-black"></div>
         <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z\' fill=\'%23818cf8\' fill-opacity=\'0.1\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")', backgroundSize: '150px 150px' }}></div>
       </div>
 
+      {/* Game Settings Modal */}
+      <GameSettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={closeSettingsModal}
+        gameMode={gameMode}
+        onModeChange={handleModeChange}
+        difficulty={difficulty}
+        onDifficultyChange={handleDifficultyChange}
+      />
+
       <div className={`relative z-10 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-6 w-full max-w-md
         backdrop-blur-sm backdrop-filter border border-gray-700 transform transition-all duration-500 ${gameAnimation}`}
         aria-live="polite">
 
+        {/* Help Modal */}
+        <HelpModal />
+
         <h1 className="text-3xl font-bold text-center mb-6 relative">
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-blue-500 animate-text-shimmer">
-            Tic Tac Toe
+            Tic TECH Toe
           </span>
           <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg opacity-20 blur-lg -z-10"></div>
         </h1>
 
-        <GameModeSelection gameMode={gameMode} onModeChange={handleModeChange} />
+        {/* Hide TabContainer since we're using the modal for settings now */}
 
         <StatusDisplay gameStatus={gameStatus} message={getStatusMessage()} />
 

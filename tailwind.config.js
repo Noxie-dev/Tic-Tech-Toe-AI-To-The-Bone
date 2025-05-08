@@ -45,6 +45,7 @@ export default {
         'shine': 'shine 2s infinite',
         'fade-in': 'fade-in 0.5s ease-in-out',
         'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
         'win': 'win 1s ease-in-out',
         'draw': 'draw 1s ease-in-out',
         'text-shimmer': 'text-shimmer 2.5s ease infinite',
@@ -69,6 +70,11 @@ export default {
         'pulse': {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.5' },
+        },
+        'pulse-glow': {
+          '0%': { transform: 'scale(1)', filter: 'drop-shadow(0 0 2px currentColor)' },
+          '50%': { transform: 'scale(1.1)', filter: 'drop-shadow(0 0 8px currentColor)' },
+          '100%': { transform: 'scale(1)', filter: 'drop-shadow(0 0 2px currentColor)' },
         },
         'win': {
           '0%': { transform: 'scale(0.95)', boxShadow: '0 0 0 0 rgba(74, 222, 128, 0.7)' },

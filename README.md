@@ -6,8 +6,13 @@ A modern Tic-Tac-Toe game with AI opponents built using React, TypeScript, and S
 
 - **Three Game Modes**:
   - Human vs Human: Play against another person
-  - Human vs AI: Play against an AI opponent
+  - Human vs AI: Play against an AI opponent with adjustable difficulty
   - AI vs AI: Watch two AI algorithms compete against each other
+
+- **Adjustable AI Difficulty**:
+  - Easy: Mostly random moves, perfect for beginners
+  - Medium: Strategic play with prioritized moves
+  - Hard: Minimax algorithm with alpha-beta pruning, extremely challenging
 
 - **Persistent Scoring**: Game scores are saved in localStorage and persist between sessions
 
@@ -19,9 +24,14 @@ A modern Tic-Tac-Toe game with AI opponents built using React, TypeScript, and S
 
 ## AI Implementation
 
-The game includes two AI implementations:
+The game includes three difficulty levels for the AI:
 
-1. **Basic AI**: Makes decisions based on a priority system:
+1. **Easy**: Makes mostly random moves with occasional smart plays
+   - 80% chance to make a random move
+   - 20% chance to make a winning move if available
+   - Perfect for beginners or casual play
+
+2. **Medium**: Makes decisions based on a priority system:
    - Win if possible
    - Block opponent's winning move
    - Take center if available
@@ -29,7 +39,10 @@ The game includes two AI implementations:
    - Take edges if available
    - Choose a random empty cell
 
-2. **Advanced AI**: Currently uses the same algorithm as the basic AI, but could be extended to use minimax with alpha-beta pruning for a more challenging opponent.
+3. **Hard**: Uses minimax algorithm with alpha-beta pruning
+   - Analyzes the game tree to find optimal moves
+   - Virtually unbeatable
+   - Adjusts search depth based on game state for optimal performance
 
 ## Technologies Used
 

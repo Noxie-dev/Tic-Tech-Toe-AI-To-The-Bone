@@ -44,7 +44,7 @@ const GameBoard: FC<GameBoardProps> = memo(({
       <div
         className="grid grid-cols-3 gap-2 p-3 bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700/50 max-w-xs shadow-lg"
         role="grid"
-        aria-label="Tic Tac Toe game board"
+        aria-label="Tic TECH Toe game board"
       >
         {board.map((value, index) => (
           <Cell
