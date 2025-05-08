@@ -1,5 +1,5 @@
 import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
+import * as tseslint from '@typescript-eslint/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import prettier from 'eslint-plugin-prettier';
@@ -7,7 +7,16 @@ import globals from 'globals';
 
 export default [
   js.configs.recommended,
-  ...tseslint.configs.recommended,
+  // Using TypeScript ESLint recommended configuration
+  {
+    files: ['**/*.{ts,tsx}'],
+    plugins: {
+      '@typescript-eslint': tseslint,
+    },
+    rules: {
+      ...tseslint.configs.recommended.rules,
+    },
+  },
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
