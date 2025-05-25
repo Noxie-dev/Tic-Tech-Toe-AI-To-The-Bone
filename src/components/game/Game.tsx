@@ -6,6 +6,7 @@ import GameBoard from './GameBoard';
 import StatusDisplay from './StatusDisplay';
 import GameInfo from './GameInfo';
 import HelpModal from './HelpModal';
+import HowToPlayButton from './HowToPlayButton'; // Added import
 import TabContainer from './TabContainer';
 import GameSettingsModal from './GameSettingsModal';
 import { makeAIMove as makeAILogicMove } from '../../lib/gameLogic';
@@ -361,6 +362,8 @@ export default function Game() {
 
         {/* Help Modal */}
         <HelpModal />
+        {/* How to Play Button/Modal */}
+        <HowToPlayButton />
 
         <h1 className="text-3xl font-bold text-center mb-6 relative">
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-blue-500 animate-text-shimmer">
