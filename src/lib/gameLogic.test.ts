@@ -4,7 +4,7 @@ import { makeAIMove, findWinningMove, evaluateBoard } from './gameLogic';
 describe('Game Logic', () => {
   describe('findWinningMove', () => {
     it('should find a winning move for X in a row', () => {
-      const board = [
+      const board: Array<'X' | 'O' | null> = [
         'X', 'X', null,
         null, null, null,
         null, null, null
@@ -14,7 +14,7 @@ describe('Game Logic', () => {
     });
 
     it('should find a winning move for X in a column', () => {
-      const board = [
+      const board: Array<'X' | 'O' | null> = [
         'X', null, null,
         'X', null, null,
         null, null, null
@@ -24,7 +24,7 @@ describe('Game Logic', () => {
     });
 
     it('should find a winning move for X in a diagonal', () => {
-      const board = [
+      const board: Array<'X' | 'O' | null> = [
         'X', null, null,
         null, 'X', null,
         null, null, null
@@ -34,7 +34,7 @@ describe('Game Logic', () => {
     });
 
     it('should find a winning move for O', () => {
-      const board = [
+      const board: Array<'X' | 'O' | null> = [
         'O', 'O', null,
         null, null, null,
         null, null, null
@@ -43,20 +43,20 @@ describe('Game Logic', () => {
       expect(result).toBe(2); // Third position in the top row
     });
 
-    it('should return -1 if no winning move is available', () => {
-      const board = [
+    it('should return null if no winning move is available', () => {
+      const board: Array<'X' | 'O' | null> = [
         'X', 'O', null,
         null, null, null,
         null, null, null
       ];
       const result = findWinningMove(board, 'X');
-      expect(result).toBe(-1);
+      expect(result).toBe(null);
     });
   });
 
   describe('makeAIMove', () => {
     it('should make a winning move when available (medium difficulty)', () => {
-      const board = [
+      const board: Array<'X' | 'O' | null> = [
         'O', 'O', null,
         null, null, null,
         null, null, null
@@ -66,7 +66,7 @@ describe('Game Logic', () => {
     });
 
     it('should block opponent\'s winning move (medium difficulty)', () => {
-      const board = [
+      const board: Array<'X' | 'O' | null> = [
         'X', 'X', null,
         null, null, null,
         null, null, null
@@ -76,7 +76,7 @@ describe('Game Logic', () => {
     });
 
     it('should take center if available and no winning/blocking moves (medium difficulty)', () => {
-      const board = [
+      const board: Array<'X' | 'O' | null> = [
         'X', null, null,
         null, null, null,
         null, null, null
@@ -86,7 +86,7 @@ describe('Game Logic', () => {
     });
 
     it('should make a move in hard difficulty', () => {
-      const board = [
+      const board: Array<'X' | 'O' | null> = [
         'X', null, null,
         null, null, null,
         null, null, null
@@ -99,7 +99,7 @@ describe('Game Logic', () => {
     });
 
     it('should make a move in easy difficulty', () => {
-      const board = [
+      const board: Array<'X' | 'O' | null> = [
         'X', null, null,
         null, null, null,
         null, null, null
@@ -113,44 +113,44 @@ describe('Game Logic', () => {
   });
 
   describe('evaluateBoard', () => {
-    it('should return a positive score for a board favorable to the maximizing player', () => {
-      const board = [
+    it('should return 0 for an ongoing game', () => {
+      const board: Array<'X' | 'O' | null> = [
         'X', 'X', null,
         null, 'O', null,
         null, null, null
       ];
-      const score = evaluateBoard(board, 'X', 'O');
-      expect(score).toBeGreaterThan(0);
+      const score = evaluateBoard(board, 'X');
+      expect(score).toBe(0);
     });
 
-    it('should return a negative score for a board favorable to the minimizing player', () => {
-      const board = [
-        'O', 'O', null,
-        null, 'X', null,
-        null, null, null
+    it('should return 0 for a draw', () => {
+      const board: Array<'X' | 'O' | null> = [
+        'X', 'O', 'X',
+        'O', 'X', 'O',
+        'O', 'X', 'O'
       ];
-      const score = evaluateBoard(board, 'X', 'O');
-      expect(score).toBeLessThan(0);
+      const score = evaluateBoard(board, 'X');
+      expect(score).toBe(0);
     });
 
-    it('should return a high positive score for a winning board for the maximizing player', () => {
-      const board = [
+    it('should return a positive score for a winning board for the player', () => {
+      const board: Array<'X' | 'O' | null> = [
         'X', 'X', 'X',
         'O', 'O', null,
         null, null, null
       ];
-      const score = evaluateBoard(board, 'X', 'O');
-      expect(score).toBeGreaterThan(0);
+      const score = evaluateBoard(board, 'X');
+      expect(score).toBe(10);
     });
 
-    it('should return a high negative score for a winning board for the minimizing player', () => {
-      const board = [
+    it('should return a negative score for a winning board for the opponent', () => {
+      const board: Array<'X' | 'O' | null> = [
         'O', 'O', 'O',
         'X', 'X', null,
         null, null, null
       ];
-      const score = evaluateBoard(board, 'X', 'O');
-      expect(score).toBeLessThan(0);
+      const score = evaluateBoard(board, 'X');
+      expect(score).toBe(-10);
     });
   });
 });

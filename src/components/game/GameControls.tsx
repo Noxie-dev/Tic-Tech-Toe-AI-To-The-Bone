@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import GameModeSelection from './GameModeSelection';
 
-type GameMode = 'human-vs-human' | 'human-vs-ai' | 'ai-vs-ai';
+type GameMode = 'humanVsHuman' | 'humanVsAI' | 'aiVsAI';
 
 interface GameControlsProps {
   onReset: () => void;
@@ -23,7 +23,7 @@ const GameControls = ({ onReset, gameMode, onChangeMode }: GameControlsProps) =>
 
       <GameModeSelection
         gameMode={gameMode}
-        onChangeMode={onChangeMode}
+        onModeChange={onChangeMode}
       />
     </div>
   );

@@ -7,7 +7,6 @@ import StatusDisplay from './StatusDisplay';
 import GameInfo from './GameInfo';
 import HelpModal from './HelpModal';
 import HowToPlayButton from './HowToPlayButton'; // Added import
-import TabContainer from './TabContainer';
 import GameSettingsModal from './GameSettingsModal';
 import { makeAIMove as makeAILogicMove } from '../../lib/gameLogic';
 
@@ -36,7 +35,6 @@ export default function Game() {
   const [winningLine, setWinningLine] = useState<number[]>([]);
   const [timerIntervalId, setTimerIntervalId] = useState<NodeJS.Timeout | null>(null);
   const [gameAnimation, setGameAnimation] = useState('');
-  const [lastMove, setLastMove] = useState<number | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [isFirstAIMove, setIsFirstAIMove] = useState(true);
 
@@ -156,21 +154,7 @@ export default function Game() {
     });
   }, [stopTimer]);
 
-  // Find a winning move for the given player
-  const findWinningMove = useCallback((player: Player, currentBoard: BoardArray) => {
-    for (const line of WINNING_PATTERNS) {
-      const [a, b, c] = line;
-      const cells = [currentBoard[a], currentBoard[b], currentBoard[c]];
-      const playerCells = cells.filter(cell => cell === player).length;
-      const emptyCells = cells.filter(cell => cell === null).length;
 
-      if (playerCells === 2 && emptyCells === 1) {
-        const emptyIndex = line[cells.findIndex(cell => cell === null)];
-        return emptyIndex;
-      }
-    }
-    return -1;
-  }, [WINNING_PATTERNS]);
 
   // AI move logic
   const makeAIMove = useCallback(() => {
@@ -186,7 +170,6 @@ export default function Game() {
     if (move !== null) {
       newBoard[move] = aiPlayer;
       setBoard(newBoard);
-      setLastMove(move);
       setCurrentPlayer(opponentPlayer);
     }
   }, [board, currentPlayer, difficulty, gameStatus]);
@@ -234,7 +217,6 @@ export default function Game() {
       setCurrentPlayer('X');
       setGameStatus('ongoing');
       setWinningLine([]);
-      setLastMove(null);
       stopTimer();
       // Don't start timer until first move
       setTimer(0);
@@ -261,7 +243,6 @@ export default function Game() {
     const newBoard = [...board];
     newBoard[index] = currentPlayer;
     setBoard(newBoard);
-    setLastMove(index);
     setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
   }, [board, currentPlayer, gameMode, gameStatus, gameStarted, startTimer]);
 

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import type { FC } from 'react';
-import { Code, Cpu, BrainCircuit } from 'lucide-react';
+import { Code } from 'lucide-react';
 
 interface AlgorithmsTabProps {
   isActive: boolean;

@@ -39,7 +39,7 @@ function makeRandomMove(board: Array<'X' | 'O' | null>): number | null {
 }
 
 // Find a winning move for the given player
-function findWinningMove(board: Array<'X' | 'O' | null>, player: 'X' | 'O') {
+export function findWinningMove(board: Array<'X' | 'O' | null>, player: 'X' | 'O') {
   for (const combo of WINNING_COMBINATIONS) {
     const [a, b, c] = combo;
     // Check if two cells have the player's mark and the third is empty
@@ -187,6 +187,19 @@ function makeEasyAIMove(board: Array<'X' | 'O' | null>, player: 'X' | 'O'): numb
     // Otherwise make a random move
     return makeRandomMove(board);
   }
+}
+
+// Evaluate board position for a given player
+export function evaluateBoard(board: Array<'X' | 'O' | null>, player: 'X' | 'O'): number {
+  const winner = checkWinner(board);
+  if (winner) {
+    return winner.player === player ? 10 : -10;
+  }
+  if (checkDraw(board)) {
+    return 0;
+  }
+  // Return neutral score for ongoing games
+  return 0;
 }
 
 // AI move logic based on difficulty

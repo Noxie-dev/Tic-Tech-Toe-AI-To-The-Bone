@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import type { FC } from 'react';
-import { Cpu, BrainCircuit, Sigma, GitBranch, Infinity as InfinityIcon } from 'lucide-react';
+import { BrainCircuit, Sigma, GitBranch, Infinity as InfinityIcon } from 'lucide-react';
 
 interface AlgorithmsPanelProps {
   isActive: boolean;
