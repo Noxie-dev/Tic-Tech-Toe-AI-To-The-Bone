@@ -421,16 +421,14 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
           {/* Contributors Section */}
           <section className="mt-6 pt-4 border-t border-gray-700">
             <h3 className="text-sm font-medium text-gray-400 mb-3 text-center">Contributors</h3>
-            <div className="flex justify-center space-x-4">
-              {/* Example contributor logos - replace with actual contributor information */}
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg">
-                NC
-              </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-lg">
-                AI
-              </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-amber-600 flex items-center justify-center text-white font-bold shadow-lg">
-                TT
+            <div className="flex justify-center items-center">
+              <div className="flex flex-col items-center">
+                <img 
+                  src="/nanitech-logo.png" 
+                  alt="NanTech DevShop Logo" 
+                  className="w-24 h-24 object-contain mb-2"
+                />
+                <span className="text-sm text-gray-300">NanTech DevShop</span>
               </div>
             </div>
           </section>

@@ -1,6 +1,19 @@
 # Tic-Tac-Toe AI
 
-A modern Tic-Tac-Toe game with AI opponents built using React, TypeScript, and Shadcn UI.
+<div align="center">
+  <img src="public/tic-tech-toe-logo.svg" alt="Tic Tech Toe Logo" width="200"/>
+  
+  A modern Tic-Tac-Toe game with AI opponents built using React, TypeScript, and Shadcn UI.
+  
+  <img src="public/Generated Image September 10, 2025 - 2_41AM.png" alt="Game Screenshot" width="600"/>
+
+  <p align="center">
+    <strong>Developed by:</strong>
+  </p>
+  <a href="https://nanitech.co.za">
+    <img src="public/nanitech-logo.png" alt="NanTech DevShop Logo" width="150"/>
+  </a>
+</div>
 
 ## Features
 
@@ -21,6 +34,21 @@ A modern Tic-Tac-Toe game with AI opponents built using React, TypeScript, and S
 - **Mobile-First Design**: Responsive layout that works well on all devices
 
 - **Modern UI**: Clean, accessible interface built with Shadcn UI components
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <strong>Game Modes</strong><br/>
+        <img src="public/Generated Image September 10, 2025 - 2_41AM.png" alt="Game Modes" width="300"/>
+      </td>
+      <td align="center">
+        <strong>AI Difficulty Levels</strong><br/>
+        <img src="public/Generated Image September 10, 2025 - 2_41AM.png" alt="AI Difficulty" width="300"/>
+      </td>
+    </tr>
+  </table>
+</div>
 
 ## AI Implementation
 
