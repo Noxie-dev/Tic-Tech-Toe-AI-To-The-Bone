@@ -5,7 +5,7 @@
   
   A modern Tic-Tac-Toe game with AI opponents built using React, TypeScript, and Shadcn UI.
   
-  <img src="public/Generated Image September 10, 2025 - 2_41AM.png" alt="Game Screenshot" width="600"/>
+  <img src="public/TickTechToe-media/Screenshot 2025-09-10 at 17.56.25.png" alt="Game Screenshot" width="600"/>
 
   <p align="center">
     <strong>Developed by:</strong>
@@ -40,15 +40,45 @@
     <tr>
       <td align="center">
         <strong>Game Modes</strong><br/>
-        <img src="public/Generated Image September 10, 2025 - 2_41AM.png" alt="Game Modes" width="300"/>
+        <img src="public/TickTechToe-media/Screenshot 2025-09-10 at 17.54.41.png" alt="Game Modes" width="300"/>
       </td>
       <td align="center">
         <strong>AI Difficulty Levels</strong><br/>
-        <img src="public/Generated Image September 10, 2025 - 2_41AM.png" alt="AI Difficulty" width="300"/>
+        <img src="public/TickTechToe-media/Screenshot 2025-09-10 at 17.55.14.png" alt="AI Difficulty" width="300"/>
       </td>
     </tr>
   </table>
 </div>
+
+## Game Screenshots and Features
+
+### Main Game Interface
+<img src="public/TickTechToe-media/main-game-ss.png" alt="Main Game Interface" width="600"/>
+The main game interface features a clean, modern design with a 3x3 grid board. The interface includes a game timer, score display, and clear player turn indicators, all wrapped in an intuitive layout that makes gameplay smooth and enjoyable.
+
+### AI vs AI Battle Mode
+<img src="public/TickTechToe-media/BI-vs-AI-game.png" alt="AI vs AI Battle" width="600"/>
+Watch two AI algorithms compete against each other in this unique mode. Observe different strategies unfold as the AIs make their moves, perfect for learning advanced gameplay tactics or just enjoying an automated match.
+
+### Game Difficulty Selection
+<img src="public/TickTechToe-media/game-difficultyl-ss.png" alt="Game Difficulty Selection" width="600"/>
+Choose from multiple difficulty levels to match your skill level. Whether you're a beginner or an expert, there's a perfect AI opponent waiting for you. Each difficulty level employs different strategies and algorithms.
+
+### Algorithm Information
+<img src="public/TickTechToe-media/algorithm-defined-ss.png" alt="Algorithm Information" width="600"/>
+Dive deep into the AI algorithms powering the game. This screen provides detailed information about how each AI difficulty level works, from simple random moves to the sophisticated minimax algorithm with alpha-beta pruning.
+
+### How to Play Guide
+<img src="public/TickTechToe-media/how-to-pay-screen-ss.png" alt="How to Play Guide" width="600"/>
+New to the game? Our comprehensive how-to-play guide walks you through all the game mechanics, rules, and features. Perfect for beginners or those looking to understand the game's advanced features.
+
+### Game Guide Interface
+<img src="public/TickTechToe-media/game-guide.ss.png" alt="Game Guide Interface" width="600"/>
+An interactive guide interface that helps players understand game mechanics, AI behaviors, and strategic tips to improve their gameplay experience.
+
+### Victory Moment
+<img src="public/TickTechToe-media/winning-hand-ss.png" alt="Victory Moment" width="600"/>
+Experience the thrill of victory! When a player wins, the winning combination is highlighted, and the game celebrates your success with a visually appealing animation.
 
 ## AI Implementation
 
