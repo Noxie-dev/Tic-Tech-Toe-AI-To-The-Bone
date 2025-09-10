@@ -1,7 +1,7 @@
 # Tic-Tac-Toe AI
 
 <div align="center">
-  <img src="./tic-tech-toe-logo.svg" alt="Tic Tech Toe Logo" width="200"/>
+  <img src="./public/tic-tech-toe-logo.svg" alt="Tic Tech Toe Logo" width="200"/>
   
   A modern Tic-Tac-Toe game with AI opponents built using React, TypeScript, and Shadcn UI.
   
@@ -11,7 +11,7 @@
     <strong>Developed by:</strong>
   </p>
   <a href="https://nanitech.co.za">
-    <img src="./nanitech-logo.png" alt="NanTech DevShop Logo" width="150"/>
+    <img src="./public/nanitech-logo.png" alt="NanTech DevShop Logo" width="150"/>
   </a>
 </div>
 
