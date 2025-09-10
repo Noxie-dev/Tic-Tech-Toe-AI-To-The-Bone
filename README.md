@@ -5,7 +5,7 @@
   
   A modern Tic-Tac-Toe game with AI opponents built using React, TypeScript, and Shadcn UI.
   
-  <img src="./TickTechToe-media/Screenshot 2025-09-10 at 17.56.25.png" alt="Game Screenshot" width="600"/>
+  <img src="./TickTechToe-media/main-game-ss.png" alt="Game Screenshot" width="600"/>
 
   <p align="center">
     <strong>Developed by:</strong>
@@ -40,11 +40,11 @@
     <tr>
       <td align="center">
         <strong>Game Modes</strong><br/>
-        <img src="./TickTechToe-media/Screenshot 2025-09-10 at 17.54.41.png" alt="Game Modes" width="300"/>
+        <img src="./TickTechToe-media/main-game-ss.png" alt="Game Modes" width="300"/>
       </td>
       <td align="center">
         <strong>AI Difficulty Levels</strong><br/>
-        <img src="./TickTechToe-media/Screenshot 2025-09-10 at 17.55.14.png" alt="AI Difficulty" width="300"/>
+        <img src="./TickTechToe-media/game-difficultyl-ss.png" alt="AI Difficulty" width="300"/>
       </td>
     </tr>
   </table>
@@ -57,7 +57,7 @@
 The main game interface features a clean, modern design with a 3x3 grid board. The interface includes a game timer, score display, and clear player turn indicators, all wrapped in an intuitive layout that makes gameplay smooth and enjoyable.
 
 ### AI vs AI Battle Mode
-<img src="./TickTechToe-media/BI-vs-AI-game.png" alt="AI vs AI Battle" width="600"/>
+<img src="./TickTechToe-media/BI-vs-AI-game-ss.png" alt="AI vs AI Battle" width="600"/>
 Watch two AI algorithms compete against each other in this unique mode. Observe different strategies unfold as the AIs make their moves, perfect for learning advanced gameplay tactics or just enjoying an automated match.
 
 ### Game Difficulty Selection
